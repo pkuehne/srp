@@ -1,0 +1,24 @@
+<!doctype html>
+<title>Recent losses for {{ character.name }}</title>
+<h3>Pilot</h3>
+<img class="char_pic" src="{{ character.picture }}">
+<div class="char_name">{{ character.name }}</div>
+<div class="char_affiliation">
+    {{ character.corporation_name }} - {{ character.alliance_name }}
+</div>
+{% if character.roles is iterable %}
+    <ul>
+    {% for role in character.roles %}
+        <li class="char_role">{{ role }}</li>
+    {% endfor %}
+    </ul>
+{% endif %}
+<h3>Losses</h3>
+{% if character.losses is iterable %}
+    <ul>
+    {% for loss in character.losses %}
+        <li class="char_loss">{{ loss.ship_type }}</li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
