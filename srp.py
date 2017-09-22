@@ -22,7 +22,8 @@ def get_access_token(code):
 class Character:
     SERVER = "https://esi.tech.ccp.is"
     BRANCH = "latest"
-    SOURCE = "tranquility"
+    SOURCE = "singularity"
+    #SOURCE = "tranquility"
     ALLIANCE="99004116"
 
     def __init__(self, access_token):
@@ -96,15 +97,17 @@ class Character:
         response = self.call_endpoint(endpoint)
         if not response.ok:
             return
+
         self.corporation_name = response.json()["corporation_name"]
-        self.alliance = response.json()["alliance_id"]
+        self.alliance = response.json().get("alliance_id", 0)
 
         # Load the alliance name
-        endpoint = "alliances/{}".format(self.alliance)
-        response = self.call_endpoint(endpoint)
-        if not response.ok:
-            return
-        self.alliance_name = response.json()["alliance_name"]
+        if self.alliance > 0:
+            endpoint = "alliances/{}".format(self.alliance)
+            response = self.call_endpoint(endpoint)
+            if not response.ok:
+                return
+            self.alliance_name = response.json()["alliance_name"]
 
     def load_losses(self):
         """ Loads the kills/losses for this character """
@@ -168,7 +171,7 @@ def callback():
 def killmails():
     """ Displays a list of all killmails """
     if "access_token" not in session:
-        return "You need to authenticate first"
+        return redirect (url_for("auth"))
 
     character = Character(session["access_token"])
     return render_template("killmails.html", character=character)
