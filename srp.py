@@ -17,18 +17,43 @@ def get_access_token(code):
                 "refresh_token": response.json()["refresh_token"],
                 "access_token": response.json()["access_token"]
                 }
+        print ("Failed request: {} - {}".format(response.status_code,
+            response.content))
         return None
 
+def get_character_id(access_token):
+    """ Loads the character ID that we'll need for everything else """
+    url = "https://login.eveonline.com/oauth/verify"
+    headers = {"Authorization": "Bearer {}".format(access_token)}
+
+    response = requests.get(url, headers=headers)
+    if not response.ok:
+        print ("Failed request: {} - {}".format(response.status_code,
+            response.content))
+        return None
+
+    return response.json()["CharacterID"]
+
 class Character:
+    """
+    Represent the information held about a character.
+
+    By default loads only publicly available information with the need for an
+    access token. This allows saving the character ID in a database and loading
+    the associated character without having to request a new access token
+
+    By calling load_private_info() and supplying an access token, more detailed
+    information can be obtained
+    """
     SERVER = "https://esi.tech.ccp.is"
     BRANCH = "latest"
     #SOURCE = "singularity" #Also change login URL!
     SOURCE = "tranquility"
     ALLIANCE=99004116
 
-    def __init__(self, access_token):
-        self.access_token = access_token
-        self.id = 0
+    def __init__(self, character_id):
+        self.access_token = ""
+        self.id = character_id
         self.name = ""
         self.picture = ""
         self.corp = 0
@@ -38,9 +63,17 @@ class Character:
         self.roles = []
         self.losses = []
 
-        self.load_basic_info()
+        self.load_public_info()
+
+    def load_public_info(self):
+        """ Loads info available without access token """
+        self.load_pilot_info()
         self.load_picture()
-        self.load_corp_and_alliance()
+        self.load_corp_and_alliance_details()
+
+    def load_private_info(self, access_token):
+        """ Loads info only accessible with an access token """
+        self.access_token = access_token
         self.load_roles()
         self.load_losses()
 
@@ -53,29 +86,31 @@ class Character:
         options["datasource"] = Character.SOURCE
 
         headers = {}
-        headers["Authorization"] = "Bearer {}".format(self.access_token)
         headers["Accept"] = "application/json"
+        if self.access_token:
+            headers["Authorization"] = "Bearer {}".format(self.access_token)
 
         response = requests.get(url, params=options, headers=headers)
         return response
 
-    def load_basic_info(self):
-        """ Loads the character ID that we'll need for everything else """
-        url = "https://login.eveonline.com/oauth/verify"
-        headers = {"Authorization": "Bearer {}".format(self.access_token)}
-
-        response = requests.get(url, headers=headers)
+    def load_pilot_info(self):
+        """ Loads name, corp, etc """
+        endpoint = "characters/{}".format(self.id)
+        response = self.call_endpoint(endpoint)
         if not response.ok:
+            print ("Failed request: {} - {}".format(response.status_code,
+                response.content))
             return
-
-        self.id = response.json()["CharacterID"]
-        self.name = response.json()["CharacterName"]
+        self.name = response.json()["name"]
+        self.corporation = response.json()["corporation_id"]
 
     def load_picture(self):
         """ Loads the picture so the site is pretty """
         endpoint = "characters/{}/portrait".format(self.id)
         response = self.call_endpoint(endpoint)
         if not response.ok:
+            print ("Failed request: {} - {}".format(response.status_code,
+                response.content))
             return
         self.picture = response.json()["px64x64"]
 
@@ -85,24 +120,19 @@ class Character:
         response = self.call_endpoint(endpoint)
         if not response.ok:
             print ("Failed request: {} - {}".format(response.status_code,
-                                                    response.content))
+                response.content))
             return
         self.roles = response.json()
 
-    def load_corp_and_alliance(self):
+    def load_corp_and_alliance_details(self):
         """ Loads the corp and alliance IDs """
-
-        # Load the corporation for this character
-        endpoint = "characters/{}".format(self.id)
-        response = self.call_endpoint(endpoint)
-        if not response.ok:
-            return
-        self.corporation = response.json()["corporation_id"]
 
         # Load the corporation name and alliance ID for the corp
         endpoint = "corporations/{}".format(self.corporation)
         response = self.call_endpoint(endpoint)
         if not response.ok:
+            print ("Failed request: {} - {}".format(response.status_code,
+                response.content))
             return
 
         self.corporation_name = response.json()["corporation_name"]
@@ -113,6 +143,8 @@ class Character:
             endpoint = "alliances/{}".format(self.alliance)
             response = self.call_endpoint(endpoint)
             if not response.ok:
+                print ("Failed request: {} - {}".format(response.status_code,
+                    response.content))
                 return
             self.alliance_name = response.json()["alliance_name"]
 
@@ -122,7 +154,7 @@ class Character:
         response = self.call_endpoint(endpoint)
         if not response.ok:
             print ("Failed request: {} - {}".format(response.status_code,
-                                                    response.content))
+                response.content))
             return
         for mail in response.json():
             loss = self.load_lossmail(mail["killmail_id"], mail["killmail_hash"])
@@ -135,7 +167,7 @@ class Character:
         response = self.call_endpoint(endpoint)
         if not response.ok:
             print ("Failed request: {} - {}".format(response.status_code,
-                                                    response.content))
+                response.content))
             return
         mail = response.json()
         if mail["victim"]["character_id"] != self.id:
@@ -182,10 +214,17 @@ def callback():
 def killmails():
     """ Displays a list of all killmails """
     if "access_token" not in session:
-        return redirect (url_for("auth"))
+        return redirect (url_for("start_auth"))
 
-    character = Character(session["access_token"])
+    character_id = get_character_id(session["access_token"])
+    if character_id is None:
+        print ("Token expired")
+        return redirect (url_for("start_auth"))
+
+    character = Character(character_id)
     if character.alliance != Character.ALLIANCE:
-        print ("{} v {}".format(character.alliance, Character.ALLIANCE))
+        print ("Invalid Alliance ID: {}".format(character.alliance))
         return "You must be a member of Warped Intentions!"
+
+    character.load_private_info(session["access_token"])
     return render_template("killmails.html", character=character)
