@@ -24,7 +24,7 @@ class Character:
     BRANCH = "latest"
     #SOURCE = "singularity" #Also change login URL!
     SOURCE = "tranquility"
-    ALLIANCE="99004116"
+    ALLIANCE=99004116
 
     def __init__(self, access_token):
         self.access_token = access_token
@@ -185,4 +185,7 @@ def killmails():
         return redirect (url_for("auth"))
 
     character = Character(session["access_token"])
+    if character.alliance != Character.ALLIANCE:
+        print ("{} v {}".format(character.alliance, Character.ALLIANCE))
+        return "You must be a member of Warped Intentions!"
     return render_template("killmails.html", character=character)
