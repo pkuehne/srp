@@ -22,8 +22,8 @@ def get_access_token(code):
 class Character:
     SERVER = "https://esi.tech.ccp.is"
     BRANCH = "latest"
-    SOURCE = "singularity"
-    #SOURCE = "tranquility"
+    #SOURCE = "singularity" #Also change login URL!
+    SOURCE = "tranquility"
     ALLIANCE="99004116"
 
     def __init__(self, access_token):
@@ -49,9 +49,14 @@ class Character:
         url = "{server}/{branch}/{endpoint}".format(server=Character.SERVER,
                 branch=Character.BRANCH,
                 endpoint=endpoint)
+
         options["datasource"] = Character.SOURCE
-        options["token"] = self.access_token
-        response = requests.get(url, params=options)
+
+        headers = {}
+        headers["Authorization"] = "Bearer {}".format(self.access_token)
+        headers["Accept"] = "application/json"
+
+        response = requests.get(url, params=options, headers=headers)
         return response
 
     def load_basic_info(self):
@@ -79,6 +84,8 @@ class Character:
         endpoint = "characters/{}/roles".format(self.id)
         response = self.call_endpoint(endpoint)
         if not response.ok:
+            print ("Failed request: {} - {}".format(response.status_code,
+                                                    response.content))
             return
         self.roles = response.json()
 
@@ -114,9 +121,11 @@ class Character:
         endpoint = "characters/{}/killmails/recent".format(self.id)
         response = self.call_endpoint(endpoint)
         if not response.ok:
+            print ("Failed request: {} - {}".format(response.status_code,
+                                                    response.content))
             return
         for mail in response.json():
-            loss = self.load_lossmail(mail)
+            loss = self.load_lossmail(mail["killmail_id"], mail["killmail_hash"])
             if loss is not None:
                 self.losses.append(loss)
 
@@ -125,9 +134,11 @@ class Character:
         endpoint = "killmails/{}/{}".format(killmail_id, killmail_hash)
         response = self.call_endpoint(endpoint)
         if not response.ok:
+            print ("Failed request: {} - {}".format(response.status_code,
+                                                    response.content))
             return
         mail = response.json()
-        if mail["victim"] != self.id:
+        if mail["victim"]["character_id"] != self.id:
             return None
         # Ding, ding, ding, a loss mail
         loss = {
@@ -141,14 +152,14 @@ class Character:
 def start_auth():
     login_url="https://login.eveonline.com/oauth/authorize"
     scopes = [
-            "esi-characters.read_standings.v1"
-            "esi-killmails.read_corporation_killmails.v1",
+            "esi-killmails.read_killmails.v1",
+            "esi-characters.read_corporation_roles.v1",
             ]
     params = {
             "response_type":"code",
             "redirect_uri":"http://localhost:5000/callback",
             "client_id":"95d9621354bd4c5ab8af889366b6d61a",
-            "scope": ",".join(scopes)
+            "scope": " ".join(scopes)
             }
     options = '&'.join('{}={}'.format(key, value) for key, value in params.items())
 

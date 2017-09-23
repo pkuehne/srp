@@ -6,7 +6,7 @@
 <div class="char_affiliation">
     {{ character.corporation_name }} - {{ character.alliance_name }}
 </div>
-{% if character.roles is iterable %}
+{% if character.roles %}
     <ul>
     {% for role in character.roles %}
         <li class="char_role">{{ role }}</li>
@@ -14,10 +14,14 @@
     </ul>
 {% endif %}
 <h3>Losses</h3>
-{% if character.losses is iterable %}
+{% if character.losses %}
     <ul>
     {% for loss in character.losses %}
-        <li class="char_loss">{{ loss.ship_type }}</li>
+    <li class="char_loss">
+        <a href="https://zkillboard.com/kill/{{ loss.id }}">
+            {{ loss.ship_type }}
+        </a>
+    </li>
     {% endfor %}
     </ul>
 {% endif %}
