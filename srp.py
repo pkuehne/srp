@@ -247,7 +247,7 @@ class Character:
                 loss["system_name"],
                 loss["timestamp"],
                 loss["is_loss"],
-                "New",
+                "Unclaimed",
                 ]
             result = query_db(query, args)
             if result is None:
@@ -365,7 +365,8 @@ def claim_losses():
         return redirect (url_for("start_auth"))
 
     for loss_id in request.form.keys():
-        query_db("UPDATE losses set status='Claimed' WHERE loss_id = ? AND "
+        query_db("UPDATE losses set status='Requested' WHERE" \
+                " status = 'Unclaimed' AND id = ? AND "
                 "character_id = ?", (loss_id, character_id))
 
     return redirect(url_for("killmails"))

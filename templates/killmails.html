@@ -44,7 +44,11 @@
         <td>{{ loss.ship_type }}</td>
         <td>{{ loss.system_name }}</td>
         <td>{{ loss.status }}</td>
-        <td><input type="checkbox" value="claim" name="{{loss.id}}"></td>
+        <td>
+            {% if loss.status == "Unclaimed" %}
+                <input type="checkbox" value="claim" name="{{loss.id}} {{disabled}}">
+            {% endif %}
+        </td>
     </tr>
     {% endfor %}
 </table>
