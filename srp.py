@@ -6,8 +6,8 @@ from flask import session # Cookie support
 from flask import render_template # Actually return a jinja template
 from flask import g # The global context
 from flask import flash # Show message from one request to the next
+from database import Database
 import requests
-import sqlite3
 
 app = Flask(__name__)
 app.secret_key = "TYDEUS"
@@ -16,44 +16,15 @@ DATABASE = './srp.db'
 SHIP_TYPES = {}
 SOLAR_SYSTEMS = {}
 
-def get_db():
+def db():
     """
     Returns the current db context or creates it if it doesn't exist
     """
     db = getattr(g, '_database', None)
     if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
-        db.row_factory = sqlite3.Row
-        create_db_if_not_exists(db)
+        db = g._database = Database()
+    db.create_db_if_not_exists()
     return db
-
-def create_db_if_not_exists(db):
-    """
-    Checks whether the db is set up and if not creates it
-    """
-    query = "SELECT name FROM sqlite_master WHERE type='table' AND name='losses'"
-    cur = db.execute(query)
-    rv = cur.fetchall()
-    cur.close()
-    if not rv:
-        init_db(db)
-
-def query_db(query, args=(), one=False):
-    """
-    Simple way to query the database
-    """
-    cur = get_db().cursor()
-    cur.execute(query, args)
-    rv = cur.fetchall()
-    cur.close()
-    get_db().commit()
-    return (rv[0] if rv else None) if one else rv
-
-def init_db(db):
-    with app.app_context():
-        with app.open_resource('schema.sql', mode='r') as f:
-            db.cursor().executescript(f.read())
-        db.commit()
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -62,7 +33,7 @@ def close_connection(exception):
     """
     db = getattr(g, '_database', None)
     if db is not None:
-        db.close()
+        db.close_db()
 
 def get_access_token(code):
     """ Get my access token for testing """
@@ -223,35 +194,13 @@ class Character:
 
     def load_lossmail(self, killmail_id, killmail_hash):
         """ Loads a mail if it is a loss """
-        loss = query_db ("select * from losses where id = ?",
-                    [killmail_id], one=True)
+        loss = db().get_loss(killmail_id)
         if loss is None:
             print("Record not found, loading: {}".format(killmail_id))
             loss = self.load_lossmail_from_esi(killmail_id, killmail_hash)
             if  loss is None:
                 return None
-            query = "INSERT INTO losses (id, hash, character_id, character_name," \
-                    " ship_type_id, ship_type_name, system_id, system_name, " \
-                    " timestamp, is_loss, status)" \
-                    " VALUES (?, ?, ?, ?," \
-                    " ?, ?, ?, ?," \
-                    " ?, ?, ?)"
-            args = [
-                loss["id"],
-                loss["hash"],
-                loss["character_id"],
-                loss["character_name"],
-                loss["ship_type_id"],
-                loss["ship_type_name"],
-                loss["system_id"],
-                loss["system_name"],
-                loss["timestamp"],
-                loss["is_loss"],
-                "Unclaimed",
-                ]
-            result = query_db(query, args)
-            if result is None:
-                print("Failed to insert record!")
+            db().insert_loss(loss)
         if loss["is_loss"]:
             return loss
         return None
@@ -277,6 +226,7 @@ class Character:
                 "system_name": self.load_system_name(mail["solar_system_id"]),
                 "timestamp": mail["killmail_time"],
                 "is_loss": is_loss,
+                "status": "Unclaimed",
                 }
         return loss
 
@@ -365,8 +315,6 @@ def claim_losses():
         return redirect (url_for("start_auth"))
 
     for loss_id in request.form.keys():
-        query_db("UPDATE losses set status='Requested' WHERE" \
-                " status = 'Unclaimed' AND id = ? AND "
-                "character_id = ?", (loss_id, character_id))
+        db().update_loss_status(loss_id, character_id, "Requested")
 
     return redirect(url_for("killmails"))
