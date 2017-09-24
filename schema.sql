@@ -1,12 +1,13 @@
-CREATE TABLE lossmails (
-    loss_id INTEGER PRIMARY KEY,
-    loss_hash STRING,
+CREATE TABLE losses (
+    id INTEGER PRIMARY KEY,
+    hash STRING,
+    is_loss BOOLEAN,
     character_id INTEGER,
     character_name STRING,
-    ship_id INTEGER,
-    ship_type STRING,
+    ship_type_id INTEGER,
+    ship_type_name STRING,
     system_id INTEGER,
     system_name STRING,
-    claimed BOOLEAN,
+    timestamp DATETIME,
     status STRING
 );

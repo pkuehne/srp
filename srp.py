@@ -24,30 +24,33 @@ def get_db():
     if db is None:
         db = g._database = sqlite3.connect(DATABASE)
         db.row_factory = sqlite3.Row
-        create_db_if_not_exists()
+        create_db_if_not_exists(db)
     return db
 
-def create_db_if_not_exists():
+def create_db_if_not_exists(db):
     """
     Checks whether the db is set up and if not creates it
     """
-    query = "SELECT name FROM sqlite_master WHERE type='table' AND name='killmails'"
-    table = query_db(query, one=True)
-    if table is None:
-        init_db()
+    query = "SELECT name FROM sqlite_master WHERE type='table' AND name='losses'"
+    cur = db.execute(query)
+    rv = cur.fetchall()
+    cur.close()
+    if not rv:
+        init_db(db)
 
 def query_db(query, args=(), one=False):
     """
     Simple way to query the database
     """
-    cur = get_db().execute(query, args)
+    cur = get_db().cursor()
+    cur.execute(query, args)
     rv = cur.fetchall()
     cur.close()
+    get_db().commit()
     return (rv[0] if rv else None) if one else rv
 
-def init_db():
+def init_db(db):
     with app.app_context():
-        db = get_db()
         with app.open_resource('schema.sql', mode='r') as f:
             db.cursor().executescript(f.read())
         db.commit()
@@ -220,6 +223,41 @@ class Character:
 
     def load_lossmail(self, killmail_id, killmail_hash):
         """ Loads a mail if it is a loss """
+        loss = query_db ("select * from losses where id = ?",
+                    [killmail_id], one=True)
+        if loss is None:
+            print("Record not found, loading: {}".format(killmail_id))
+            loss = self.load_lossmail_from_esi(killmail_id, killmail_hash)
+            if  loss is None:
+                return None
+            query = "INSERT INTO losses (id, hash, character_id, character_name," \
+                    " ship_type_id, ship_type_name, system_id, system_name, " \
+                    " timestamp, is_loss, status)" \
+                    " VALUES (?, ?, ?, ?," \
+                    " ?, ?, ?, ?," \
+                    " ?, ?, ?)"
+            args = [
+                loss["id"],
+                loss["hash"],
+                loss["character_id"],
+                loss["character_name"],
+                loss["ship_type_id"],
+                loss["ship_type_name"],
+                loss["system_id"],
+                loss["system_name"],
+                loss["timestamp"],
+                loss["is_loss"],
+                "New",
+                ]
+            result = query_db(query, args)
+            if result is None:
+                print("Failed to insert record!")
+        if loss["is_loss"]:
+            return loss
+        return None
+
+    def load_lossmail_from_esi(self, killmail_id, killmail_hash):
+        """ Loads the lossmail from ESI """
         endpoint = "killmails/{}/{}".format(killmail_id, killmail_hash)
         response = self.call_endpoint(endpoint)
         if not response.ok:
@@ -227,16 +265,18 @@ class Character:
                 response.content))
             return
         mail = response.json()
-        if mail["victim"]["character_id"] != self.id:
-            return None
-        # Ding, ding, ding, a loss mail
-        #type_name = load_ship_type(mail["victim"]["ship_type_id"])
+        is_loss = mail["victim"]["character_id"] == self.id
         loss = {
                 "id": killmail_id,
                 "hash": killmail_hash,
-                "ship_type": self.load_ship_type(mail["victim"]["ship_type_id"]),
-                "system": self.load_system_name(mail["solar_system_id"]),
+                "character_id": self.id,
+                "character_name": self.name,
+                "ship_type_id": mail["victim"]["ship_type_id"],
+                "ship_type_name": self.load_ship_type(mail["victim"]["ship_type_id"]),
+                "system_id": mail["solar_system_id"],
+                "system_name": self.load_system_name(mail["solar_system_id"]),
                 "timestamp": mail["killmail_time"],
+                "is_loss": is_loss,
                 }
         return loss
 

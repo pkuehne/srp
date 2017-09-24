@@ -29,17 +29,19 @@
 {% if character.losses %}
 <table style="width:100%">
     <tr>
+        <th>Link</th>
         <th>Timestamp</th>
         <th>Ship</th>
         <th>System</th>
-        <th>Link</th>
+        <th>Status</th>
     </tr>
     {% for loss in character.losses %}
     <tr class="char_loss">
+        <td><a href="https://zkillboard.com/kill/{{ loss.id }}">Loss</a></td>
         <td>{{ loss.timestamp }}</td>
         <td>{{ loss.ship_type }}</td>
-        <td>{{ loss.system }}</td>
-        <td><a href="https://zkillboard.com/kill/{{ loss.id }}">Link</a></td>
+        <td>{{ loss.system_name }}</td>
+        <td>{{ loss.status }}</td>
     </tr>
     {% endfor %}
 </table>

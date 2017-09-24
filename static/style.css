@@ -4,6 +4,10 @@
     padding: 10px;
 }
 
+#flash {
+    background-color: lightblue;
+}
+
 th {
     text-align: left;
 }
