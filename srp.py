@@ -356,3 +356,16 @@ def killmails():
 
     character.load_private_info(session["access_token"])
     return render_template("killmails.html", character=character)
+
+@app.route("/claim_losses", methods=["POST"])
+def claim_losses():
+    character_id = get_character_id(session["access_token"])
+    if character_id is None:
+        flash ("Token expired")
+        return redirect (url_for("start_auth"))
+
+    for loss_id in request.form.keys():
+        query_db("UPDATE losses set status='Claimed' WHERE loss_id = ? AND "
+                "character_id = ?", (loss_id, character_id))
+
+    return redirect(url_for("killmails"))

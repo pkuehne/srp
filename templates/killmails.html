@@ -27,13 +27,15 @@
 {% endif %}
 <h3>Losses</h3>
 {% if character.losses %}
-<table style="width:100%">
+<form action="claim_losses" method="post">
+<table style="width:100%;margin-top:10">
     <tr>
         <th>Link</th>
         <th>Timestamp</th>
         <th>Ship</th>
         <th>System</th>
         <th>Status</th>
+        <th>File claim</th>
     </tr>
     {% for loss in character.losses %}
     <tr class="char_loss">
@@ -42,8 +44,11 @@
         <td>{{ loss.ship_type }}</td>
         <td>{{ loss.system_name }}</td>
         <td>{{ loss.status }}</td>
+        <td><input type="checkbox" value="claim" name="{{loss.id}}"></td>
     </tr>
     {% endfor %}
 </table>
+<input type="submit" value="Submit claim">
+</form>
 {% endif %}
 {% endblock %}
