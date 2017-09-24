@@ -7,18 +7,18 @@
         {% endblock %}
     </head>
     <body>
-        <div id="flashes">
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <ul class=flashes>
-                {% for message in messages %}
-                    <li>{{ message }}</li>
-                {% endfor %}
-                </ul>
-            {% endif %}
-        {% endwith %}
-        </div>
         <div id="content">
+            <div id="flashes">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <ul class="flash_list">
+                    {% for message in messages %}
+                        <li class="flash">{{ message }}</li>
+                    {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endwith %}
+            </div>
             {% block content %}
             {% endblock %}
         </div>

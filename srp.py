@@ -24,7 +24,17 @@ def get_db():
     if db is None:
         db = g._database = sqlite3.connect(DATABASE)
         db.row_factory = sqlite3.Row
+        create_db_if_not_exists()
     return db
+
+def create_db_if_not_exists():
+    """
+    Checks whether the db is set up and if not creates it
+    """
+    query = "SELECT name FROM sqlite_master WHERE type='table' AND name='killmails'"
+    table = query_db(query, one=True)
+    if table is None:
+        init_db()
 
 def query_db(query, args=(), one=False):
     """
@@ -274,7 +284,7 @@ def start_auth():
     options = '&'.join('{}={}'.format(key, value) for key, value in params.items())
 
     link = "{login_url}?{options}".format(login_url=login_url, options=options)
-    return "<a href='{}'>Sign in here</a>".format(link)
+    return render_template("auth.html", link=link)
 
 @app.route("/callback")
 def callback():
