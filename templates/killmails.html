@@ -27,14 +27,21 @@
 {% endif %}
 <h3>Losses</h3>
 {% if character.losses %}
-<ul>
+<table style="width:100%">
+    <tr>
+        <th>Timestamp</th>
+        <th>Ship</th>
+        <th>System</th>
+        <th>Link</th>
+    </tr>
     {% for loss in character.losses %}
-    <li class="char_loss">
-        <a href="https://zkillboard.com/kill/{{ loss.id }}">
-            {{ loss.ship_type }} in {{ loss.system }}
-        </a>
-    </li>
+    <tr class="char_loss">
+        <td>{{ loss.timestamp }}</td>
+        <td>{{ loss.ship_type }}</td>
+        <td>{{ loss.system }}</td>
+        <td><a href="https://zkillboard.com/kill/{{ loss.id }}">Link</a></td>
+    </tr>
     {% endfor %}
-</ul>
+</table>
 {% endif %}
 {% endblock %}

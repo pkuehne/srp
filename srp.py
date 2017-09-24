@@ -226,6 +226,7 @@ class Character:
                 "hash": killmail_hash,
                 "ship_type": self.load_ship_type(mail["victim"]["ship_type_id"]),
                 "system": self.load_system_name(mail["solar_system_id"]),
+                "timestamp": mail["killmail_time"],
                 }
         return loss
 
