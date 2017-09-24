@@ -31,7 +31,7 @@
     {% for loss in character.losses %}
     <li class="char_loss">
         <a href="https://zkillboard.com/kill/{{ loss.id }}">
-            {{ loss.ship_type }}
+            {{ loss.ship_type }} in {{ loss.system }}
         </a>
     </li>
     {% endfor %}

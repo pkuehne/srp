@@ -1,8 +1,55 @@
-from flask import Flask, redirect, request, url_for, session, render_template
+from flask import Flask # Main flask setup
+from flask import redirect # Redirect requests to other handlers
+from flask import request # Access to the request
+from flask import url_for # To dynamically generate routes
+from flask import session # Cookie support
+from flask import render_template # Actually return a jinja template
+from flask import g # The global context
+from flask import flash # Show message from one request to the next
 import requests
+import sqlite3
 
 app = Flask(__name__)
 app.secret_key = "TYDEUS"
+DATABASE = './srp.db'
+
+SHIP_TYPES = {}
+SOLAR_SYSTEMS = {}
+
+def get_db():
+    """
+    Returns the current db context or creates it if it doesn't exist
+    """
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect(DATABASE)
+        db.row_factory = sqlite3.Row
+    return db
+
+def query_db(query, args=(), one=False):
+    """
+    Simple way to query the database
+    """
+    cur = get_db().execute(query, args)
+    rv = cur.fetchall()
+    cur.close()
+    return (rv[0] if rv else None) if one else rv
+
+def init_db():
+    with app.app_context():
+        db = get_db()
+        with app.open_resource('schema.sql', mode='r') as f:
+            db.cursor().executescript(f.read())
+        db.commit()
+
+@app.teardown_appcontext
+def close_connection(exception):
+    """
+    Automatically closes the connection to the db when the app context closes
+    """
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
 
 def get_access_token(code):
     """ Get my access token for testing """
@@ -173,12 +220,42 @@ class Character:
         if mail["victim"]["character_id"] != self.id:
             return None
         # Ding, ding, ding, a loss mail
+        #type_name = load_ship_type(mail["victim"]["ship_type_id"])
         loss = {
                 "id": killmail_id,
                 "hash": killmail_hash,
-                "ship_type": mail["victim"]["ship_type_id"]
+                "ship_type": self.load_ship_type(mail["victim"]["ship_type_id"]),
+                "system": self.load_system_name(mail["solar_system_id"]),
                 }
         return loss
+
+    def load_ship_type(self, ship_type_id):
+        """ Returns the ship name from the type ID """
+        if ship_type_id in SHIP_TYPES:
+            return SHIP_TYPES[ship_type_id]
+
+        endpoint = "universe/types/{}".format(ship_type_id)
+        response = self.call_endpoint(endpoint)
+        if not response.ok:
+            print ("Failed request: {} - {}".format(response.status_code,
+                response.content))
+            return
+        SHIP_TYPES[ship_type_id] = response.json()["name"]
+        return SHIP_TYPES[ship_type_id]
+
+    def load_system_name(self, system_id):
+        """ Returns the name of the requested solar system """
+        if system_id in SOLAR_SYSTEMS:
+            return SOLAR_SYSTEMS[system_id]
+
+        endpoint = "universe/systems/{}".format(system_id)
+        response = self.call_endpoint(endpoint)
+        if not response.ok:
+            print ("Failed request: {} - {}".format(response.status_code,
+                response.content))
+            return
+        SOLAR_SYSTEMS[system_id] = response.json()["name"]
+        return SOLAR_SYSTEMS[system_id]
 
 @app.route("/")
 def start_auth():
@@ -218,7 +295,7 @@ def killmails():
 
     character_id = get_character_id(session["access_token"])
     if character_id is None:
-        print ("Token expired")
+        flash ("Token expired")
         return redirect (url_for("start_auth"))
 
     character = Character(character_id)
