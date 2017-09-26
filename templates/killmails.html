@@ -35,7 +35,6 @@
         <th>Ship</th>
         <th>System</th>
         <th>Status</th>
-        <th>File claim</th>
     </tr>
     {% for loss in character.losses %}
     <tr class="char_loss">
@@ -43,10 +42,15 @@
         <td>{{ loss.timestamp }}</td>
         <td>{{ loss.ship_type_name }}</td>
         <td>{{ loss.system_name }}</td>
-        <td>{{ loss.status }}</td>
         <td>
             {% if loss.status == "Unclaimed" %}
-                <input type="checkbox" value="claim" name="{{loss.id}} {{disabled}}">
+                <select name="{{loss.id}}" {{disabled}}>
+                    <option value="Unclaimed">No Action</option>
+                    <option value="Dismissed">Dismiss</option>
+                    <option value="Claimed">Claim</option>
+                </select>
+            {% else %}
+                {{ loss.status }}
             {% endif %}
         </td>
     </tr>

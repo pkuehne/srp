@@ -50,10 +50,10 @@ class Database:
     def insert_loss(self, loss):
         query = "INSERT INTO losses (id, hash, character_id, character_name," \
                 " ship_type_id, ship_type_name, system_id, system_name, " \
-                " timestamp, is_loss, status)" \
+                " timestamp, notes, is_loss, status)" \
                 " VALUES (?, ?, ?, ?," \
                 " ?, ?, ?, ?," \
-                " ?, ?, ?)"
+                " ?, ?, ?, ?)"
         args = [
             loss["id"],
             loss["hash"],
@@ -64,6 +64,7 @@ class Database:
             loss["system_id"],
             loss["system_name"],
             loss["timestamp"],
+            loss["notes"],
             loss["is_loss"],
             "Unclaimed",
             ]

@@ -9,5 +9,6 @@ CREATE TABLE losses (
     system_id INTEGER,
     system_name STRING,
     timestamp DATETIME,
+    notes STRING,
     status STRING
 );
