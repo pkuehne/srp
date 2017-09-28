@@ -178,7 +178,10 @@ def view_claims():
         claim["losses"] = []
         for entry in entries:
             loss = dict(zip(entry.keys(), entry))
-            loss["price"] = price_cache()[loss["ship_type_id"]]
+            try:
+                loss["price"] = price_cache()[loss["ship_type_id"]]
+            except KeyError:
+                loss["price"] = 0
             claim["loss_total"] += loss["price"]
             claim["losses"].append(loss)
         claims.append(claim)
