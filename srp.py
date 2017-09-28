@@ -161,7 +161,13 @@ def view_claims():
     character = Character(character_id, db())
     if character.alliance != Character.ALLIANCE:
         print ("Invalid Alliance ID: {}".format(character.alliance))
-        return "You must be a member of Warped Intentions!"
+        flash("You must be a member of Warped Intentions!")
+        return redirect (url_for("start_auth"))
+    
+    character.load_private_info(session["access_token"])
+    if not character.srp_owner:
+        flash("You must be a director to review losses!")
+        return redirect (url_for("killmails"))
 
     rows = db().load_claim_characters()
     claims = []

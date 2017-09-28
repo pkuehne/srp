@@ -27,6 +27,7 @@ class Character:
         self.corp_name = ""
         self.alliance = 0
         self.alliance_name = ""
+        self.srp_owner = False
         self.roles = []
         self.losses = []
 
