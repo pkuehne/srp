@@ -4,8 +4,9 @@
     padding: 10px;
 }
 
-#flash {
+.flash {
     background-color: lightblue;
+    padding: 5px;
 }
 
 th {

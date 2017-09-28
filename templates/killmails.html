@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block content %}
-<h3>Pilot</h3>
+<h3>Your Profile</h3>
 <div class="char_container" style="width: 100%; overflow: hidden;">
     <div class="char_pic" style="width: 80px; float: left;">
         <img src="{{ character.picture }}">
@@ -18,14 +18,12 @@
         {{ character.corporation_name }} - {{ character.alliance_name }}
     </div>
 </div>
-{% if character.roles %}
-<ul>
-    {% for role in character.roles %}
-    <li class="char_role">{{ role }}</li>
-    {% endfor %}
-</ul>
+{% if character.srp_owner %}
+<h3>Review Claims</h3>
+    <a href="{{url_for('view_claims')}}">Claim Board</a>
 {% endif %}
-<h3>Losses</h3>
+
+<h3>Your Losses</h3>
 {% if character.losses %}
 <form action="claim_losses" method="post">
 <table style="width:100%;margin-top:10">

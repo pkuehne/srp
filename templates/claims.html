@@ -1,0 +1,40 @@
+<!doctype html>
+{% extends "layout.html" %}
+
+{% block head %}
+{{ super() }}
+{% endblock %}
+
+{% block content %}
+
+{% for character in claims %}
+<h3>{{ character.character_name }}</h3>
+<form action="claim_losses" method="post">
+<table style="width:100%;margin-top:10">
+    <tr>
+        <th>Link</th>
+        <th>Timestamp</th>
+        <th>Ship</th>
+        <th>System</th>
+        <th>Status</th>
+    </tr>
+    {% for loss in character.losses %}
+    <tr class="char_loss">
+        <td><a href="https://zkillboard.com/kill/{{ loss.id }}">Loss</a></td>
+        <td>{{ loss.timestamp }}</td>
+        <td>{{ loss.ship_type_name }}</td>
+        <td>{{ loss.system_name }}</td>
+        <td>
+            <select name="{{loss.id}}">
+                <option value="Claimed">No Action</option>
+                <option value="Paid">Paid</option>
+                <option value="Rejected">Rejected</option>
+            </select>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+<input type="submit" value="Submit response">
+</form>
+{% endfor %}
+{% endblock %}

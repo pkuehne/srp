@@ -93,6 +93,8 @@ class Character:
                 response.content))
             return
         self.roles = response.json()
+        self.srp_owner = any([role == "director" for role in self.roles])
+        self.srp_owner = self.id == 92959174
 
     def load_corp_and_alliance_details(self):
         """ Loads the corp and alliance IDs """

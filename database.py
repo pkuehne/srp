@@ -40,12 +40,11 @@ class Database:
 
     def get_loss(self, killmail_id):
         return self.query_db ("select * from losses where id = ?",
-                    [killmail_id], one=True)
+                [killmail_id], one=True)
 
-    def update_loss_status(self, loss_id, character_id, status):
-        self.query_db("UPDATE losses set status=? WHERE" \
-                " status = 'Unclaimed' AND id = ? AND "
-                "character_id = ?", (status, loss_id, character_id))
+    def update_loss_status(self, loss_id, status):
+        self.query_db("UPDATE losses set status=? WHERE id = ? ",
+                (status, loss_id))
 
     def insert_loss(self, loss):
         query = "INSERT INTO losses (id, hash, character_id, character_name," \
@@ -55,18 +54,28 @@ class Database:
                 " ?, ?, ?, ?," \
                 " ?, ?, ?, ?)"
         args = [
-            loss["id"],
-            loss["hash"],
-            loss["character_id"],
-            loss["character_name"],
-            loss["ship_type_id"],
-            loss["ship_type_name"],
-            loss["system_id"],
-            loss["system_name"],
-            loss["timestamp"],
-            loss["notes"],
-            loss["is_loss"],
-            "Unclaimed",
-            ]
+                loss["id"],
+                loss["hash"],
+                loss["character_id"],
+                loss["character_name"],
+                loss["ship_type_id"],
+                loss["ship_type_name"],
+                loss["system_id"],
+                loss["system_name"],
+                loss["timestamp"],
+                loss["notes"],
+                loss["is_loss"],
+                "Unclaimed",
+                ]
         result = self.query_db(query, args)
+
+    def load_claim_characters(self):
+        query = "SELECT character_id, character_name" \
+                " FROM losses WHERE status='Claimed'  GROUP BY 1;"
+        return self.query_db(query)
+
+    def load_claims(self, character_id):
+        query = "SELECT * FROM losses WHERE status='Claimed'" \
+                " AND character_id = ?"
+        return self.query_db(query, args=[character_id])
 

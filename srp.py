@@ -123,9 +123,34 @@ def claim_losses():
         flash ("Token expired")
         return redirect (url_for("start_auth"))
 
-    print(request.form)
+    print (request.form)
     for loss_id in request.form.keys():
         status = request.form[loss_id]
-        db().update_loss_status(loss_id, character_id, status)
+        db().update_loss_status(loss_id, status)
 
     return redirect(url_for("killmails"))
+
+@app.route("/view_claims")
+def view_claims():
+    character_id = get_character_id(session["access_token"])
+    if character_id is None:
+        flash ("Token expired")
+        return redirect (url_for("start_auth"))
+
+    character = Character(character_id, db())
+    if character.alliance != Character.ALLIANCE:
+        print ("Invalid Alliance ID: {}".format(character.alliance))
+        return "You must be a member of Warped Intentions!"
+
+    rows = db().load_claim_characters()
+    claims = []
+    for row in rows:
+        claim = dict(zip(row.keys(), row))
+        claim["losses"] = db().load_claims(claim["character_id"])
+        claims.append(claim)
+
+    if len(claims) == 0:
+        flash ("There are no claims to review")
+        return redirect(url_for("killmails"))
+    return render_template("claims.html", claims=claims)
+
