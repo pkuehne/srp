@@ -10,13 +10,32 @@ import requests
 
 from character import Character
 from database import Database
+import esi
 
 app = Flask(__name__)
 app.secret_key = "TYDEUS"
-#DATABASE = './srp.db'
 
-#SHIP_TYPES = {}
-#SOLAR_SYSTEMS = {}
+def cache_market_prices():
+    endpoint = "markets/prices"
+    response = esi.call_endpoint(endpoint)
+    if not response.ok:
+        print ("Failed request: {} - {}".format(response.status_code,
+            response.content))
+        return
+    items = response.json()
+    cache = {}
+    for item in items:
+        cache[item["type_id"]] = item["adjusted_price"]
+    return cache
+
+def price_cache():
+    """
+    Warms up the price cache if its not set yet
+    """
+    cache = getattr(g, '_cache', None)
+    if cache is None:
+        cache = g._cache = cache_market_prices()
+    return cache
 
 def db():
     """
@@ -91,11 +110,13 @@ def callback():
     if code is None:
         return "Failed to extract code"
     tokens = get_access_token(code)
-    if tokens is not None:
-        session["access_token"] = tokens["access_token"]
-        session["refresh_token"] = tokens["refresh_token"]
-        return redirect (url_for("killmails"))
-    return "Failed to get access token"
+    if tokens is None:
+        flash("Failed to get access token")
+        return redirect (url_for("start_auth"))
+
+    session["access_token"] = tokens["access_token"]
+    session["refresh_token"] = tokens["refresh_token"]
+    return redirect (url_for("killmails"))
 
 @app.route("/killmails")
 def killmails():
@@ -146,7 +167,14 @@ def view_claims():
     claims = []
     for row in rows:
         claim = dict(zip(row.keys(), row))
-        claim["losses"] = db().load_claims(claim["character_id"])
+        entries = db().load_claims(claim["character_id"])
+        claim["loss_total"] = 0
+        claim["losses"] = []
+        for entry in entries:
+            loss = dict(zip(entry.keys(), entry))
+            loss["price"] = price_cache()[loss["ship_type_id"]]
+            claim["loss_total"] += loss["price"]
+            claim["losses"].append(loss)
         claims.append(claim)
 
     if len(claims) == 0:

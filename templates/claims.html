@@ -9,6 +9,7 @@
 
 {% for character in claims %}
 <h3>{{ character.character_name }}</h3>
+{% set total = 0 %}
 <form action="claim_losses" method="post">
 <table style="width:100%;margin-top:10">
     <tr>
@@ -16,6 +17,7 @@
         <th>Timestamp</th>
         <th>Ship</th>
         <th>System</th>
+        <th>Price</th>
         <th>Status</th>
     </tr>
     {% for loss in character.losses %}
@@ -24,6 +26,7 @@
         <td>{{ loss.timestamp }}</td>
         <td>{{ loss.ship_type_name }}</td>
         <td>{{ loss.system_name }}</td>
+        <td>{{ "{:,.2f} isk".format(loss.price) }}</td>
         <td>
             <select name="{{loss.id}}">
                 <option value="Claimed">No Action</option>
@@ -33,6 +36,12 @@
         </td>
     </tr>
     {% endfor %}
+    <td></td>
+    <td></td>
+    <td></td>
+    <td><b>Total:</b></th>
+    <td>{{ "{:,.2f} isk".format(character.loss_total) }}</td>
+    <td></td>
 </table>
 <input type="submit" value="Submit response">
 </form>

@@ -1,4 +1,5 @@
 import requests
+import esi
 
 SHIP_TYPES = {}
 SOLAR_SYSTEMS = {}
@@ -14,10 +15,6 @@ class Character:
     By calling load_private_info() and supplying an access token, more detailed
     information can be obtained
     """
-    SERVER = "https://esi.tech.ccp.is"
-    BRANCH = "latest"
-    #SOURCE = "singularity" #Also change login URL!
-    SOURCE = "tranquility"
     ALLIANCE=99004116
 
     def __init__(self, character_id, db):
@@ -47,26 +44,10 @@ class Character:
         self.load_roles()
         self.load_losses()
 
-    def call_endpoint(self, endpoint, options={}):
-        """ Returns a response for the given endpoint """
-        url = "{server}/{branch}/{endpoint}".format(server=Character.SERVER,
-                branch=Character.BRANCH,
-                endpoint=endpoint)
-
-        options["datasource"] = Character.SOURCE
-
-        headers = {}
-        headers["Accept"] = "application/json"
-        if self.access_token:
-            headers["Authorization"] = "Bearer {}".format(self.access_token)
-
-        response = requests.get(url, params=options, headers=headers)
-        return response
-
     def load_pilot_info(self):
         """ Loads name, corp, etc """
         endpoint = "characters/{}".format(self.id)
-        response = self.call_endpoint(endpoint)
+        response = esi.call_endpoint(endpoint, self.access_token)
         if not response.ok:
             print ("Failed request: {} - {}".format(response.status_code,
                 response.content))
@@ -77,7 +58,7 @@ class Character:
     def load_picture(self):
         """ Loads the picture so the site is pretty """
         endpoint = "characters/{}/portrait".format(self.id)
-        response = self.call_endpoint(endpoint)
+        response = esi.call_endpoint(endpoint, self.access_token)
         if not response.ok:
             print ("Failed request: {} - {}".format(response.status_code,
                 response.content))
@@ -87,7 +68,7 @@ class Character:
     def load_roles(self):
         """ Loads the corporation roles for this character """
         endpoint = "characters/{}/roles".format(self.id)
-        response = self.call_endpoint(endpoint)
+        response = esi.call_endpoint(endpoint, self.access_token)
         if not response.ok:
             print ("Failed request: {} - {}".format(response.status_code,
                 response.content))
@@ -101,7 +82,7 @@ class Character:
 
         # Load the corporation name and alliance ID for the corp
         endpoint = "corporations/{}".format(self.corporation)
-        response = self.call_endpoint(endpoint)
+        response = esi.call_endpoint(endpoint, self.access_token)
         if not response.ok:
             print ("Failed request: {} - {}".format(response.status_code,
                 response.content))
@@ -113,7 +94,7 @@ class Character:
         # Load the alliance name
         if self.alliance > 0:
             endpoint = "alliances/{}".format(self.alliance)
-            response = self.call_endpoint(endpoint)
+            response = esi.call_endpoint(endpoint, self.access_token)
             if not response.ok:
                 print ("Failed request: {} - {}".format(response.status_code,
                     response.content))
@@ -123,7 +104,7 @@ class Character:
     def load_losses(self):
         """ Loads the kills/losses for this character """
         endpoint = "characters/{}/killmails/recent".format(self.id)
-        response = self.call_endpoint(endpoint)
+        response = esi.call_endpoint(endpoint, self.access_token)
         if not response.ok:
             print ("Failed request: {} - {}".format(response.status_code,
                 response.content))
@@ -149,7 +130,7 @@ class Character:
     def load_lossmail_from_esi(self, killmail_id, killmail_hash):
         """ Loads the lossmail from ESI """
         endpoint = "killmails/{}/{}".format(killmail_id, killmail_hash)
-        response = self.call_endpoint(endpoint)
+        response = esi.call_endpoint(endpoint, self.access_token)
         if not response.ok:
             print ("Failed request: {} - {}".format(response.status_code,
                 response.content))
@@ -168,6 +149,7 @@ class Character:
                 "timestamp": mail["killmail_time"],
                 "is_loss": is_loss,
                 "notes": "",
+                "market_price": self.load_market_price(mail["victim"]["ship_type_id"]),
                 "status": "Unclaimed",
                 }
         return loss
@@ -178,7 +160,7 @@ class Character:
             return SHIP_TYPES[ship_type_id]
 
         endpoint = "universe/types/{}".format(ship_type_id)
-        response = self.call_endpoint(endpoint)
+        response = esi.call_endpoint(endpoint, self.access_token)
         if not response.ok:
             print ("Failed request: {} - {}".format(response.status_code,
                 response.content))
@@ -192,11 +174,12 @@ class Character:
             return SOLAR_SYSTEMS[system_id]
 
         endpoint = "universe/systems/{}".format(system_id)
-        response = self.call_endpoint(endpoint)
+        response = esi.call_endpoint(endpoint, self.access_token)
         if not response.ok:
             print ("Failed request: {} - {}".format(response.status_code,
                 response.content))
             return
         SOLAR_SYSTEMS[system_id] = response.json()["name"]
         return SOLAR_SYSTEMS[system_id]
+
 

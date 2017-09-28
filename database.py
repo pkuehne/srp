@@ -1,7 +1,5 @@
 import sqlite3
 
-
-
 class Database:
     """ Access to the SRP database """
 
