@@ -6,6 +6,8 @@
 {% endblock %}
 
 {% block content %}
+<h1>Warped Intentions SRP</h1>
+
 <h3>Your Profile</h3>
 <div class="char_container" style="width: 100%; overflow: hidden;">
     <div class="char_pic" style="width: 80px; float: left;">
@@ -26,7 +28,7 @@
 <h3>Your Losses</h3>
 {% if character.losses %}
 <form action="claim_losses" method="post">
-<table style="width:100%;margin-top:10">
+<table class="loss_table">
     <tr>
         <th>Link</th>
         <th>Timestamp</th>
@@ -38,8 +40,16 @@
     <tr class="char_loss">
         <td><a href="https://zkillboard.com/kill/{{ loss.id }}">Loss</a></td>
         <td>{{ loss.timestamp }}</td>
-        <td>{{ loss.ship_type_name }}</td>
-        <td>{{ loss.system_name }}</td>
+        <td>
+            <a href="http://www.eveonlineships.com/eve-ship-database.php?ids={{loss.ship_type_id}}">
+                {{ loss.ship_type_name }}
+            </a>
+        </td>
+        <td>
+            <a href="http://evemaps.dotlan.net/system/{{ loss.system_name }}">
+                {{ loss.system_name }}
+            </a>
+        </td>
         <td>
             {% if loss.status == "Unclaimed" %}
                 <select name="{{loss.id}}" {{disabled}}>

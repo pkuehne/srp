@@ -7,11 +7,11 @@
 
 {% block content %}
 
+<h1>Review Alliance Ship Loss Claims</h1>
 {% for character in claims %}
-<h3>{{ character.character_name }}</h3>
-{% set total = 0 %}
+<h3>Pilot: {{ character.character_name }}</h3>
 <form action="claim_losses" method="post">
-<table style="width:100%;margin-top:10">
+<table class='loss_table'>
     <tr>
         <th>Link</th>
         <th>Timestamp</th>
@@ -24,8 +24,16 @@
     <tr class="char_loss">
         <td><a href="https://zkillboard.com/kill/{{ loss.id }}">Loss</a></td>
         <td>{{ loss.timestamp }}</td>
-        <td>{{ loss.ship_type_name }}</td>
-        <td>{{ loss.system_name }}</td>
+        <td>
+            <a href="http://www.eveonlineships.com/eve-ship-database.php?ids={{loss.ship_type_id}}">
+                {{ loss.ship_type_name }}
+            </a>
+        </td>
+        <td>
+            <a href="http://evemaps.dotlan.net/system/{{ loss.system_name }}">
+                {{ loss.system_name }}
+            </a>
+        </td>
         <td>{{ "{:,.2f} isk".format(loss.price) }}</td>
         <td>
             <select name="{{loss.id}}">

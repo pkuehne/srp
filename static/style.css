@@ -1,15 +1,59 @@
+body {
+    background-image: url("background.png")
+}
+
 #content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+}
+
+#auth_link {
     margin: auto;
-    width: 30%;
-    padding: 10px;
+    font-size: 30px;
+    color: white;
+    text-decoration: none;
+}
+
+#header {
+    margin: auto;
+    width: 40%;
+    padding: 30px;
 }
 
 .flash {
-    background-color: lightblue;
+    background-color: orange;
+    color: black;
     padding: 5px;
     margin: 10px;
 }
 
+.loss_table {
+    width: 100%;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+div {
+    color: white;
+}
+
 th {
     text-align: left;
+    color: white;
+}
+
+h1 {
+    color: white;
+}
+
+a {
+    color: orange;
+}
+
+input {
+    position: absolute;
+    right: 0px;
+    margin-top: 10px;
 }
