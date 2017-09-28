@@ -185,7 +185,7 @@ def view_claims():
             claim["loss_total"] += loss["price"]
             claim["losses"].append(loss)
         claims.append(claim)
-
+    print (claims)
     if len(claims) == 0:
         flash ("There are no claims to review")
         return redirect(url_for("killmails"))

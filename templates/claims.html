@@ -8,9 +8,9 @@
 {% block content %}
 
 <h1>Review Alliance Ship Loss Claims</h1>
+<form action="claim_losses" method="post">
 {% for character in claims %}
 <h3>Pilot: {{ character.character_name }}</h3>
-<form action="claim_losses" method="post">
 <table class='loss_table'>
     <tr>
         <th>Link</th>
@@ -51,7 +51,7 @@
     <td>{{ "{:,.2f} isk".format(character.loss_total) }}</td>
     <td></td>
 </table>
+{% endfor %}
 <input type="submit" value="Submit response">
 </form>
-{% endfor %}
 {% endblock %}
